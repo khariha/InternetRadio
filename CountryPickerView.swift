@@ -20,7 +20,7 @@ struct CountryPickerView: View {
     var body: some View {
         ZStack{
             Rectangle()
-                .frame(width: 217, height: 30)
+                .frame(width: 215, height: 30)
                 .foregroundColor(.white)
                 .cornerRadius(10)
             HStack{
@@ -28,6 +28,7 @@ struct CountryPickerView: View {
                 Picker("Country", selection: $selectedCountry) {
                     ForEach(getLocales(), id: \.id) { country in
                         Text(country.name).tag(country.id)
+                            .lineLimit(1)
                     }
                 }
             }

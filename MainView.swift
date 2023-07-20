@@ -13,7 +13,7 @@ struct ContentView: View {
         NavigationStack {
             VStack{
                 RadioView()
-                    .navigationTitle("InternetRadio")
+                    .navigationTitle("GlobeTuner")
                     .padding(.leading, 10)
                     .padding(.trailing, 10)
             }

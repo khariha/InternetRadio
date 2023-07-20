@@ -58,7 +58,7 @@ struct RadioView: View {
                     
                 }
                 .padding(.trailing, 10)
-                .padding(.bottom, 10)
+                .padding(.bottom, 20)
                 List(filteredStations.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) { station in
                     HStack{
                         if let faviconUrl = URL(string: station.favicon ?? "") {

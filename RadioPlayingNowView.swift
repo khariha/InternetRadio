@@ -49,6 +49,7 @@ struct RadioPlayingNowView: View {
                                 .clipped()
                         }
                     }
+                    
                     VStack(alignment: .leading, spacing: 0) {
                         Text("\(playingStation?.name ?? "")")
                             .fontWeight(.bold)
