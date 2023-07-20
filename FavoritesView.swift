@@ -6,20 +6,22 @@
 //
 
 import SwiftUI
+import Foundation
 
 let globalFavoritesAPI = FavoriteRadioStation()
+let stationIDKey = "stationID_key"
 
 struct FavoritesView: View {
     @ObservedObject var api = RadioBrowserAPI.shared
     @ObservedObject var favoritesAPI = globalFavoritesAPI
-
+    
     var body: some View {
         List(favoritesAPI.favoriteStations) { station in
             HStack{
                 VStack(alignment: .leading) {
                     Text(station.name.trimmingCharacters(in: .whitespacesAndNewlines))
                         .fontWeight(.bold)
-                    Text(station.country)
+                    Text(station.state ?? "")
                 }
                 Spacer()  // This will push the button to the right
                 Button(action: {
@@ -49,27 +51,50 @@ struct FavoritesView: View {
 }
 
 class FavoriteRadioStation: ObservableObject {
-    @Published var favoriteStationIDs = Set<String>()
+    
+    @Published var favoriteStationIDs: [String] = [] {
+        didSet {
+            saveFavoriteIDs()
+        }
+    }
     
     let api = RadioBrowserAPI.shared  // Access to all stations
-
+    
+    // Initialization
+    init() {
+        loadFavoriteIDs()
+    }
+    
     // Computed property to get favorite stations
     var favoriteStations: [RadioStation] {
         api.stations.filter { favoriteStationIDs.contains($0.stationuuid) }
     }
-
+    
     func addFavorite(station: RadioStation) {
-        favoriteStationIDs.insert(station.stationuuid)
+        favoriteStationIDs.append(station.stationuuid)
     }
-
+    
     func removeFavorite(station: RadioStation) {
-        favoriteStationIDs.remove(station.stationuuid)
+        guard let index = favoriteStationIDs.firstIndex(of: station.stationuuid) else { return  }
+        favoriteStationIDs.remove(at: index)
     }
-
+    
     func isFavorite(station: RadioStation) -> Bool {
         return favoriteStationIDs.contains(station.stationuuid)
     }
+    
+    func saveFavoriteIDs() { //UserDefaults persistence
+        UserDefaults.standard.set(favoriteStationIDs, forKey: stationIDKey)
+    }
+    
+    func loadFavoriteIDs() { //Load persisted data
+        if let savedIDs = UserDefaults.standard.array(forKey: stationIDKey) as? [String] {
+            favoriteStationIDs = savedIDs
+        }
+    }
 }
+
+
 
 
 struct FavoritesView_Previews: PreviewProvider {

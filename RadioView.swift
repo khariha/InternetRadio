@@ -12,6 +12,7 @@ struct RadioView: View {
     
     @ObservedObject var api = RadioBrowserAPI.shared
     @ObservedObject var favoritesAPI = globalFavoritesAPI
+    @State private var selectedCountry: String = "US"
     
     @State private var searchText = ""
     @State var isFavorite : Bool = false
@@ -30,10 +31,34 @@ struct RadioView: View {
         }
         
         GeometryReader { geometry in
-            VStack{
+            VStack(spacing: 0){
                 RadioPlayingNowView()
-                    .padding(.top, 10)
-                    .padding(.leading, 30)
+                    .padding(.bottom, 20)
+                HStack {
+                    Spacer()
+                    CountryPickerView(selectedCountry: $selectedCountry)
+                        .onChange(of: selectedCountry) { newValue in
+                            RadioBrowserAPI.shared.getRequestOfRadioStations(for: newValue)
+                        }
+                    NavigationLink(destination: FavoritesView()) {
+                        ZStack {
+                            Rectangle()
+                                .frame(width: 125, height: 30)
+                                .foregroundColor(.indigo)
+                                .cornerRadius(10)
+                            HStack{
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.white)
+                                Text("Favorites")
+                                    .foregroundColor(.white)
+                            }
+                        }
+                    }
+                    
+                    
+                }
+                .padding(.trailing, 10)
+                .padding(.bottom, 10)
                 List(filteredStations.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) { station in
                     HStack{
                         if let faviconUrl = URL(string: station.favicon ?? "") {
@@ -63,15 +88,20 @@ struct RadioView: View {
                         Spacer()  // This will push the button to the right
                         Button(action: {
                             if api.playingStationID == station.stationuuid {
-                                api.pauseRadio()
+                                if api.isPlaying {
+                                    api.pauseRadio()
+                                } else {
+                                    api.playRadio(urlString: station.url, stationId: station.stationuuid)
+                                }
                             } else {
                                 api.playRadio(urlString: station.url, stationId: station.stationuuid)
                             }
                         }) {
-                            Image(systemName: api.playingStationID == station.stationuuid ? "pause.fill" : "play.fill")
-                                .foregroundColor(.blue)
+                            Image(systemName: api.playingStationID == station.stationuuid && api.isPlaying ? "pause.fill" : "play.fill")
+                                .foregroundColor(.indigo)
                         }
                         .buttonStyle(BorderlessButtonStyle())
+                        
                         Button {
                             if favoritesAPI.isFavorite(station: station) {
                                 favoritesAPI.removeFavorite(station: station)
@@ -80,18 +110,22 @@ struct RadioView: View {
                             }
                         } label: {
                             Image(systemName: favoritesAPI.isFavorite(station: station) ? "bookmark.fill" : "bookmark")
+                                .foregroundColor(.indigo)
                         }
                         .buttonStyle(BorderlessButtonStyle())
                         
                     }
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.inset)
                 .searchable(text: $searchText)
                 .onAppear {
-                    api.getRequestOfRadioStations()
+                    api.getRequestOfRadioStations(for: selectedCountry)
                 }
+                
             }
+            
         }
+        
     }
 }
 

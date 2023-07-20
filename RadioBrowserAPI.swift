@@ -14,8 +14,17 @@ class RadioBrowserAPI: ObservableObject {
     
     @Published var stations = [RadioStation]()
     @Published var isPlaying = false
+    
     var player: AVPlayer?
     var playingStationID: String?
+    
+    private init() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+        } catch(let error) {
+            print(error.localizedDescription)
+        }
+    }
     
     func resolve(hostname: String) -> String? {
         let host = CFHostCreateWithName(nil, hostname as CFString).takeRetainedValue()
@@ -45,13 +54,13 @@ class RadioBrowserAPI: ObservableObject {
             print("Unable to reverse ip: \(ip)")
             return ip
         }
-
+        
         for addrinfo in sequence(first: results, next: { $0?.pointee.ai_next }) {
             guard let pointee = addrinfo?.pointee else {
                 print("Unable to reverse ip: \(ip)")
                 return ip
             }
-
+            
             let hname = UnsafeMutablePointer<Int8>.allocate(capacity: Int(NI_MAXHOST))
             defer {
                 hname.deallocate()
@@ -62,18 +71,18 @@ class RadioBrowserAPI: ObservableObject {
             }
             return String(cString: hname)
         }
-
+        
         return ip
     }
-
-    func getRequestOfRadioStations() {
-        let urlString = String("https://" + reverseDNS(ip: resolve(hostname: "all.api.radio-browser.info") ?? "at1.api.radio-browser.info") + "/json/stations/bycountrycodeexact/us")
+    
+    func getRequestOfRadioStations(for countryCode: String) {
+        let urlString = String("https://" + reverseDNS(ip: resolve(hostname: "all.api.radio-browser.info") ?? "at1.api.radio-browser.info") + "/json/stations/bycountrycodeexact/\(countryCode)")
         print(urlString)
         guard let url = URL(string: urlString) else {
             print("Invalid URL string: \(urlString)")
             return
         }
-
+        
         let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
             guard let data = data else {
                 print("DataTask error: \(error?.localizedDescription ?? "unknown error")")
@@ -96,18 +105,21 @@ class RadioBrowserAPI: ObservableObject {
             } catch let error {
                 print("Non-decoding error: \(error)")
             }
+            
+            
         }
-
+        
         task.resume()
+        
     }
-
+    
     func fallbackToDefaultAPI() {
         let urlString = "https://nl1.api.radio-browser.info/json/stations/bycountrycodeexact/us"
         guard let url = URL(string: urlString) else {
             print("Invalid URL string: \(urlString)")
             return
         }
-
+        
         let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
             guard let data = data else {
                 print("DataTask error: \(error?.localizedDescription ?? "unknown error")")
@@ -124,17 +136,11 @@ class RadioBrowserAPI: ObservableObject {
                 print("Decoding error: \(error)")
             }
         }
-
+        
         task.resume()
     }
     
     func playRadio(urlString: String, stationId: String) {  // Changed from UUID to String
-        
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback)
-        } catch(let error) {
-            print(error.localizedDescription)
-        }
         
         guard let url = URL(string: urlString) else { return }
         print(url)
@@ -148,8 +154,9 @@ class RadioBrowserAPI: ObservableObject {
     func pauseRadio() {
         player?.pause()
         isPlaying = false
-        playingStationID = nil // Clear the currently playing station ID
+        // Do not clear the currently playing station ID when paused
     }
+    
 }
 
 struct RadioStation: Codable, Identifiable {
