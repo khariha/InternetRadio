@@ -41,7 +41,7 @@ In the future, we plan to add more features to InternetRadio, such as:
 
 ## Privacy Policy
 
-**Effective Date:** [Today's Date]
+**Effective Date:** 07/20/23
 
 **1. No Data Collection**
 GlobeTuner does not collect any personal information or data from users of the App.
@@ -59,7 +59,7 @@ We maintain appropriate security measures to protect the App and its users. Howe
 We may update this Privacy Policy in the future. Any changes will be effective upon posting the updated Privacy Policy within the App.
 
 **6. Contact Us**
-If you have any questions or concerns regarding this Privacy Policy, please contact us at [contact email].
+If you have any questions or concerns regarding this Privacy Policy, please contact us at khariha@iu.edu.
 
 
 - Support for additional countries.
