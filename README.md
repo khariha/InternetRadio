@@ -39,6 +39,29 @@ To run the app:
 
 In the future, we plan to add more features to InternetRadio, such as:
 
+**Privacy Policy**
+
+**Effective Date:** [Today's Date]
+
+**1. No Data Collection**
+GlobeTuner does not collect any personal information or data from users of the App.
+
+**2. No Data Usage or Sharing**
+Since no personal information is collected, we do not use or share any personal information with third parties.
+
+**3. Data Retention**
+Since no data is collected, there is no data retention period.
+
+**4. Security**
+We maintain appropriate security measures to protect the App and its users. However, please note that no method of transmission or storage is completely secure.
+
+**5. Updates to Privacy Policy**
+We may update this Privacy Policy in the future. Any changes will be effective upon posting the updated Privacy Policy within the App.
+
+**6. Contact Us**
+If you have any questions or concerns regarding this Privacy Policy, please contact us at [contact email].
+
+
 - Support for additional countries.
 - User accounts for syncing favorites across devices.
 - More detailed station information.
