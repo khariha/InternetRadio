@@ -39,7 +39,7 @@ To run the app:
 
 In the future, we plan to add more features to InternetRadio, such as:
 
-**Privacy Policy**
+## Privacy Policy
 
 **Effective Date:** [Today's Date]
 
