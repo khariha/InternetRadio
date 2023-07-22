@@ -58,11 +58,13 @@ struct RadioPlayingNowView: View {
                                 .fontWeight(.bold)
                                 .font(.system(size: 16))
                                 .lineLimit(1)
+                                .foregroundColor(.white)
 
                             Text(playingStation?.state?.isEmpty == true ? "Unknown" : (playingStation?.state ?? "or shuffle for a random station"))
                                 .fontWeight(.light)
                                 .font(.system(size: 14))
                                 .lineLimit(1)
+                                .foregroundColor(.white)
                         }
 
                         
@@ -148,6 +150,6 @@ struct RadioPlayingNowView: View {
 
 struct RadioPlayingNowView_Previews: PreviewProvider {
     static var previews: some View {
-        RadioPlayingNowView().preferredColorScheme(.dark)
+        RadioPlayingNowView()
     }
 }

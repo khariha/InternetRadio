@@ -99,6 +99,6 @@ class FavoriteRadioStation: ObservableObject {
 
 struct FavoritesView_Previews: PreviewProvider {
     static var previews: some View {
-        FavoritesView().preferredColorScheme(.dark)
+        FavoritesView()
     }
 }

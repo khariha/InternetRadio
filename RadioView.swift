@@ -137,11 +137,21 @@ struct RadioView: View {
             }
         }
         .searchable(text: $searchText)
+        .toolbar {
+            NavigationLink(destination: SettingsView()) {
+                Image(systemName: "gearshape.fill")
+            }
+        }
+        .background(
+            Image("homeBackground2")
+                .ignoresSafeArea()
+                .padding(.bottom, 600)
+        )
     }
 }
 
 struct RadioView_Previews: PreviewProvider {
     static var previews: some View {
-        RadioView().preferredColorScheme(.dark)
+        RadioView()
     }
 }

@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct InternetRadioApp: App {
+    
+    @AppStorage("isDarkMode") private var isDarkMode = false
+    
     var body: some Scene {
         WindowGroup {
-            ContentView().preferredColorScheme(.dark)
+            ContentView().preferredColorScheme(isDarkMode ? .dark : .light)
         }
     }
 }
