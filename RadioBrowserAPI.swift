@@ -75,7 +75,19 @@ class RadioBrowserAPI: ObservableObject {
         return ip
     }
     
+    enum RadioRequestResult<Success> {
+        case empty
+        case inProgress
+        case success(Success)
+        case failure(Error)
+    }
+    
+    @Published var radioResult: RadioRequestResult<[RadioStation]> = .empty
+    
     func getRequestOfRadioStations(for countryCode: String) {
+        
+        self.radioResult = .inProgress
+        
         let urlString = String("https://" + reverseDNS(ip: resolve(hostname: "all.api.radio-browser.info") ?? "at1.api.radio-browser.info") + "/json/stations/bycountrycodeexact/\(countryCode)")
         print(urlString)
         guard let url = URL(string: urlString) else {
@@ -93,17 +105,25 @@ class RadioBrowserAPI: ObservableObject {
                 let decoder = JSONDecoder()
                 let radioStations = try decoder.decode([RadioStation].self, from: data)
                 DispatchQueue.main.async {
-                    self.stations = radioStations
+                    if data.count < 10 {
+                        self.radioResult = .empty
+                    } else {
+                        self.radioResult = .success(radioStations)
+                        self.stations = radioStations
+                    }
+                    
                 }
             } catch let error as DecodingError {
                 if case .dataCorrupted = error {
                     print("Decoding error: \(error). Falling back to default API.")
                     self.fallbackToDefaultAPI()
+                    self.radioResult = .failure(error)
                 } else {
                     print("Other decoding error: \(error)")
                 }
             } catch let error {
                 print("Non-decoding error: \(error)")
+                self.radioResult = .failure(error)
             }
             
             

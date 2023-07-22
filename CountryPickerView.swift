@@ -18,12 +18,12 @@ struct CountryPickerView: View {
     @Binding var selectedCountry: String
     
     var body: some View {
-        ZStack{
+        ZStack(alignment: .center){
             Rectangle()
-                .frame(width: 215, height: 30)
+                .frame(width: 200, height: 30)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-            HStack{
+            HStack(alignment: .center, spacing: 0){
                 Text(flag(country: selectedCountry))
                 Picker("Country", selection: $selectedCountry) {
                     ForEach(getLocales(), id: \.id) { country in
