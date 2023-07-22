@@ -8,7 +8,7 @@
 import Foundation
 import AVKit
 
-class RadioBrowserAPI: ObservableObject {
+class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPushDelegate {
     
     static let shared = RadioBrowserAPI()
     
@@ -18,7 +18,9 @@ class RadioBrowserAPI: ObservableObject {
     var player: AVPlayer?
     var playingStationID: String?
     
-    private init() {
+    private var metadataOutput: AVPlayerItemMetadataOutput!
+    
+    private override init() {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback)
         } catch(let error) {
@@ -165,6 +167,11 @@ class RadioBrowserAPI: ObservableObject {
         guard let url = URL(string: urlString) else { return }
         print(url)
         let playerItem = AVPlayerItem(url: url)
+        
+        metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
+        metadataOutput.setDelegate(self, queue: DispatchQueue.main)
+        playerItem.add(metadataOutput)
+        
         self.player = AVPlayer(playerItem: playerItem)
         self.player?.play()
         self.isPlaying = true
@@ -175,6 +182,17 @@ class RadioBrowserAPI: ObservableObject {
         player?.pause()
         isPlaying = false
         // Do not clear the currently playing station ID when paused
+    }
+    
+    func metadataOutput(_ output: AVPlayerItemMetadataOutput, didOutputTimedMetadataGroups groups: [AVTimedMetadataGroup], from track: AVPlayerItemTrack?) {
+        if let item = groups.first?.items.first // make this an AVMetadata item
+        {
+            item.value(forKeyPath: "value") // looking for that key bro
+            let Song = (item.value(forKeyPath: "value")!)
+            print("Now Playing: \n \(Song)") // print the results
+        } else {
+            print("MetaData Error") // No Metadata or Could not read
+        }
     }
     
 }
@@ -224,6 +242,7 @@ struct RadioStation: Codable, Identifiable {
         return RadioBrowserAPI.shared.playingStationID == stationuuid ? "pause.fill" : "play.fill"
     }
 }
+    
 
 
 
