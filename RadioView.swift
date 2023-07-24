@@ -8,8 +8,12 @@ import SwiftUI
 import AVKit
 import Kingfisher
 
+class SelectedStationModel: ObservableObject {
+    static let shared = SelectedStationModel()
+    @Published var selectedStation: RadioStation?
+}
+
 struct RadioView: View {
-    
     @ObservedObject var api = RadioBrowserAPI.shared
     @ObservedObject var favoritesAPI = globalFavoritesAPI
     @State private var selectedCountry: String = "US" {
@@ -17,42 +21,59 @@ struct RadioView: View {
             api.getRequestOfRadioStations(for: selectedCountry)
         }
     }
-    
-    
     @State private var searchText = ""
-    @State var isFavorite : Bool = false
-    
     @State var scaleRotate = false
-    
+    @ObservedObject var selectedStationAPI = SelectedStationModel.shared
+
     init() {
         api.getRequestOfRadioStations(for: selectedCountry)
     }
-    
-    var body: some View {
-        
-        let radioStations: [RadioStation] = api.stations
-        var filteredStations: [RadioStation] {
-            if searchText.isEmpty {
-                return radioStations.sorted(by: { $0.votes > $1.votes })
-            } else {
-                return radioStations.filter { station in
-                    station.name.localizedCaseInsensitiveContains(searchText)
-                }.sorted(by: { $0.votes > $1.votes })
-            }
+
+    private var filteredStations: [RadioStation] {
+        let radioStations = api.stations
+        if searchText.isEmpty {
+            return radioStations.sorted(by: { $0.votes > $1.votes })
+        } else {
+            return radioStations.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
+            }.sorted(by: { $0.votes > $1.votes })
         }
-        
+    }
+
+    private func playOrPauseStation(_ station: RadioStation) {
+        if api.playingStationID == station.stationuuid {
+            if api.isPlaying {
+                api.pauseRadio()
+            } else {
+                api.playRadio(urlString: station.url_resolved, stationId: station.stationuuid)
+                selectedStationAPI.selectedStation = station
+            }
+        } else {
+            api.playRadio(urlString: station.url_resolved, stationId: station.stationuuid)
+            selectedStationAPI.selectedStation = station
+        }
+    }
+
+    private func toggleFavorite(_ station: RadioStation) {
+        if favoritesAPI.isFavorite(station: station) {
+            favoritesAPI.removeFavorite(station: station)
+        } else {
+            favoritesAPI.addFavorite(station: station)
+        }
+    }
+
+    var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 RadioPlayingNowView()
                     .padding(.bottom, 20)
-                
+
                 switch api.radioResult {
                 case .empty:
-                    
                     Text("No stations in this country to fetch. 🥲")
                         .foregroundColor(.indigo)
                         .fontWeight(.light)
-                    
+
                 case .inProgress:
                     Spacer()
                     Image(systemName: "dot.radiowaves.left.and.right")
@@ -61,14 +82,13 @@ struct RadioView: View {
                         .rotationEffect(.degrees(scaleRotate ? 360 : 0), anchor: .center)
                         .animation(Animation.interpolatingSpring(stiffness: 60, damping: 13).repeatForever(autoreverses: true))
                         .padding(.bottom, 50)
-                    //.animation(Animation.easeInOut(duration: 2).delay(0.5).repeatForever(autoreverses: true))
                         .onAppear() {
-                        self.scaleRotate.toggle()
-                    }
+                            self.scaleRotate.toggle()
+                        }
                     Text("Fetching Stations...")
                         .foregroundColor(.indigo)
                     Spacer()
-                    
+
                 case .success(_):
                     List(filteredStations.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) { station in
                         HStack {
@@ -90,47 +110,44 @@ struct RadioView: View {
                                     .aspectRatio(contentMode: .fit)
                                     .clipped()
                             }
-                            
+
                             VStack(alignment: .leading) {
                                 Text(station.name.trimmingCharacters(in: .whitespacesAndNewlines))
                                     .fontWeight(.bold)
+                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : .black)
                                 Text(station.state ?? "")
+                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : .black)
+
                             }
                             Spacer()  // This will push the button to the right
-                            
-                            Button(action: {
-                                if api.playingStationID == station.stationuuid {
-                                    if api.isPlaying {
-                                        api.pauseRadio()
-                                    } else {
-                                        api.playRadio(urlString: station.url, stationId: station.stationuuid)
-                                    }
-                                } else {
-                                    api.playRadio(urlString: station.url, stationId: station.stationuuid)
-                                }
-                            }) {
+
+                            Button(action: { playOrPauseStation(station) }) {
                                 Image(systemName: api.playingStationID == station.stationuuid && api.isPlaying ? "pause.fill" : "play.fill")
                                     .foregroundColor(.indigo)
                             }
                             .buttonStyle(BorderlessButtonStyle())
-                            
-                            Button {
-                                if favoritesAPI.isFavorite(station: station) {
-                                    favoritesAPI.removeFavorite(station: station)
-                                } else {
-                                    favoritesAPI.addFavorite(station: station)
-                                }
-                            } label: {
+
+                            Button(action: { toggleFavorite(station) }) {
                                 Image(systemName: favoritesAPI.isFavorite(station: station) ? "bookmark.fill" : "bookmark")
                                     .foregroundColor(.indigo)
-                                    //.animation(.interpolatingSpring(stiffness: 170, damping: 15))
+                                //.animation(.interpolatingSpring(stiffness: 170, damping: 15))
                             }
                             .buttonStyle(BorderlessButtonStyle())
                         }
+                        .onTapGesture {
+                            withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.6, blendDuration: 0.6)) {
+                                playOrPauseStation(station)
+                            }
+                        }
+                        .listRowBackground(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? GlassBackground(width: 350, height: 60, color: .indigo).cornerRadius(10)
+                            .cornerRadius(10) : nil)
+
+                        .listRowSeparator(.hidden)
                     }
                     .listStyle(.inset)
-                   
-                    
+                    .scrollIndicators(.hidden)
+                    .contentShape(Rectangle())
+
                 case let .failure(error):
                     Text(error.localizedDescription)
                 }

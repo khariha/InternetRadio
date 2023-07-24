@@ -1,4 +1,3 @@
-//
 //  BookmarkView.swift
 //  InternetRadio
 //
@@ -17,55 +16,61 @@ struct FavoritesView: View {
     
     var body: some View {
         List(favoritesAPI.favoriteStations) { station in
-            HStack{
+            HStack {
                 VStack(alignment: .leading) {
                     Text(station.name.trimmingCharacters(in: .whitespacesAndNewlines))
                         .fontWeight(.bold)
                     Text(station.state ?? "")
                 }
-                Spacer()  // This will push the button to the right
-                Button(action: {
-                    if api.playingStationID == station.stationuuid {
-                        api.pauseRadio()
-                    } else {
-                        api.playRadio(urlString: station.url, stationId: station.stationuuid)
-                    }
-                }) {
+                Spacer()
+                
+                Button(action: { playOrPause(station) }) {
                     Image(systemName: api.playingStationID == station.stationuuid ? "pause.fill" : "play.fill")
                         .foregroundColor(.blue)
                 }
                 .buttonStyle(BorderlessButtonStyle())
-                Button(action: {
-                    if favoritesAPI.isFavorite(station: station) {
-                        favoritesAPI.removeFavorite(station: station)
-                    } else {
-                        favoritesAPI.addFavorite(station: station)
-                    }
-                }) {
+                
+                Button(action: { toggleFavorite(station) }) {
                     Image(systemName: favoritesAPI.isFavorite(station: station) ? "bookmark.fill" : "bookmark")
                 }
                 .buttonStyle(BorderlessButtonStyle())
             }
         }
     }
-}
-
-class FavoriteRadioStation: ObservableObject {
     
-    @Published var favoriteStationIDs: [String] = [] {
-        didSet {
-            saveFavoriteIDs()
+    func playOrPause(_ station: RadioStation) {
+        if api.playingStationID == station.stationuuid {
+            api.pauseRadio()
+        } else {
+            api.playRadio(urlString: station.url_resolved, stationId: station.stationuuid)
+            print(station.url_resolved)
         }
     }
     
-    let api = RadioBrowserAPI.shared  // Access to all stations
-    
-    // Initialization
-    init() {
-        loadFavoriteIDs()
+    func toggleFavorite(_ station: RadioStation) {
+        if favoritesAPI.isFavorite(station: station) {
+            favoritesAPI.removeFavorite(station: station)
+        } else {
+            favoritesAPI.addFavorite(station: station)
+        }
+    }
+}
+
+class FavoriteRadioStation: ObservableObject {
+    @Published var favoriteStationIDs: [String] = [] {
+        didSet {
+            UserDefaults.standard.set(favoriteStationIDs, forKey: stationIDKey)
+        }
     }
     
-    // Computed property to get favorite stations
+    let api = RadioBrowserAPI.shared
+    
+    init() {
+        if let savedIDs = UserDefaults.standard.array(forKey: stationIDKey) as? [String] {
+            favoriteStationIDs = savedIDs
+        }
+    }
+    
     var favoriteStations: [RadioStation] {
         api.stations.filter { favoriteStationIDs.contains($0.stationuuid) }
     }
@@ -75,27 +80,13 @@ class FavoriteRadioStation: ObservableObject {
     }
     
     func removeFavorite(station: RadioStation) {
-        guard let index = favoriteStationIDs.firstIndex(of: station.stationuuid) else { return  }
-        favoriteStationIDs.remove(at: index)
+        favoriteStationIDs.removeAll(where: { $0 == station.stationuuid })
     }
     
     func isFavorite(station: RadioStation) -> Bool {
-        return favoriteStationIDs.contains(station.stationuuid)
-    }
-    
-    func saveFavoriteIDs() { //UserDefaults persistence
-        UserDefaults.standard.set(favoriteStationIDs, forKey: stationIDKey)
-    }
-    
-    func loadFavoriteIDs() { //Load persisted data
-        if let savedIDs = UserDefaults.standard.array(forKey: stationIDKey) as? [String] {
-            favoriteStationIDs = savedIDs
-        }
+        favoriteStationIDs.contains(station.stationuuid)
     }
 }
-
-
-
 
 struct FavoritesView_Previews: PreviewProvider {
     static var previews: some View {

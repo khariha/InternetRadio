@@ -14,6 +14,7 @@ class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPus
     
     @Published var stations = [RadioStation]()
     @Published var isPlaying = false
+    @Published var nowPlayingItem: String = ""
     
     var player: AVPlayer?
     var playingStationID: String?
@@ -189,8 +190,10 @@ class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPus
         {
             item.value(forKeyPath: "value") // looking for that key bro
             let Song = (item.value(forKeyPath: "value")!)
+            nowPlayingItem = Song as! String
             print("Now Playing: \n \(Song)") // print the results
         } else {
+            nowPlayingItem = "MetaData Error"
             print("MetaData Error") // No Metadata or Could not read
         }
     }
