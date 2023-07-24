@@ -85,7 +85,15 @@ class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPus
         case failure(Error)
     }
     
+    enum RadioPlayResult {
+        case empty
+        case inProgress
+        case success
+        case failure
+    }
+    
     @Published var radioResult: RadioRequestResult<[RadioStation]> = .empty
+    @Published var radioRequestResult: RadioPlayResult = .empty
     
     func getRequestOfRadioStations(for countryCode: String) {
         
@@ -120,13 +128,11 @@ class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPus
                 if case .dataCorrupted = error {
                     print("Decoding error: \(error). Falling back to default API.")
                     self.fallbackToDefaultAPI()
-                    self.radioResult = .failure(error)
                 } else {
                     print("Other decoding error: \(error)")
                 }
             } catch let error {
                 print("Non-decoding error: \(error)")
-                self.radioResult = .failure(error)
             }
             
             
@@ -163,21 +169,67 @@ class RadioBrowserAPI: NSObject, ObservableObject, AVPlayerItemMetadataOutputPus
         task.resume()
     }
     
+    
+    
     func playRadio(urlString: String, stationId: String) {  // Changed from UUID to String
         
-        guard let url = URL(string: urlString) else { return }
-        print(url)
-        let playerItem = AVPlayerItem(url: url)
+        // Set radioRequestResult to .inProgress
+        DispatchQueue.main.async {
+            self.radioRequestResult = .inProgress
+        }
         
+        guard let url = URL(string: urlString) else {
+            return
+        }
+        print(url)
+        
+        let playerItem = AVPlayerItem(url: url)
         metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
         metadataOutput.setDelegate(self, queue: DispatchQueue.main)
         playerItem.add(metadataOutput)
         
         self.player = AVPlayer(playerItem: playerItem)
+        
+        // Observe the status of the player item
+        self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: [.new, .initial], context: nil)
+        
         self.player?.play()
         self.isPlaying = true
         self.playingStationID = stationId // Update the currently playing station ID
     }
+    
+    // Observe value changes
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "status" {
+            switch self.player?.currentItem?.status {
+            case .readyToPlay:
+                DispatchQueue.main.async {
+                    self.radioRequestResult = .success
+                }
+            case .failed:
+                if let error = self.player?.currentItem?.error as NSError?, error.domain == NSURLErrorDomain && error.code == NSURLErrorTimedOut {
+                    DispatchQueue.main.async {
+                        self.radioRequestResult = .failure
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.radioRequestResult = .failure
+                    }
+                }
+            case .unknown, .none:
+                self.radioRequestResult = .inProgress
+            @unknown default:
+                DispatchQueue.main.async {
+                    self.radioRequestResult = .failure
+                }
+            }
+        }
+    }
+    
+    deinit {
+        self.player?.currentItem?.removeObserver(self, forKeyPath: "status")
+    }
+    
     
     func pauseRadio() {
         player?.pause()
@@ -244,8 +296,9 @@ struct RadioStation: Codable, Identifiable {
     var playImageName: String {
         return RadioBrowserAPI.shared.playingStationID == stationuuid ? "pause.fill" : "play.fill"
     }
-}
     
+}
+
 
 
 

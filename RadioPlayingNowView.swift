@@ -13,50 +13,22 @@ struct RadioPlayingNowView: View {
     @ObservedObject var api = RadioBrowserAPI.shared
     @ObservedObject var favoritesAPI = globalFavoritesAPI
     @State private var selectedCountry: String = "US"
-    @ObservedObject var selectedStationAPI = SelectedStationModel.shared
-
-    private var playingStation: RadioStation? {
+    
+    var playingStation: RadioStation? {
         api.stations.first { $0.stationuuid == api.playingStationID }
     }
-
-    private var radioStations: [RadioStation] {
-        api.stations
-    }
-
-    private func togglePlayOrPause() {
-        if let station = playingStation {
-            if api.isPlaying {
-                api.pauseRadio()
-            } else {
-                api.playRadio(urlString: station.url_resolved, stationId: station.stationuuid)
-            }
-        }
-    }
-
-    private func playRandomStation() {
-        if let randomStation = radioStations.randomElement() {
-            api.playRadio(urlString: randomStation.url_resolved, stationId: randomStation.stationuuid)
-            selectedStationAPI.selectedStation = randomStation
-            print(randomStation.url_resolved)
-        }
-    }
-
-    private func toggleFavorite() {
-        if let station = playingStation {
-            if favoritesAPI.isFavorite(station: station) {
-                favoritesAPI.removeFavorite(station: station)
-            } else {
-                favoritesAPI.addFavorite(station: station)
-            }
-        }
-    }
-
+    
     var body: some View {
+        
+        let radioStations: [RadioStation] = api.stations
+        
         VStack {
             ZStack(alignment: .center) {
-                GlassBackground(width: 350, height: 110, color: .indigo)
+                Rectangle()
+                    .frame(width: 350, height: 110)
+                    .foregroundColor(.indigo)
                     .cornerRadius(10)
-
+                
                 VStack {
                     HStack {
                         if playingStation != nil {
@@ -65,6 +37,7 @@ struct RadioPlayingNowView: View {
                                     .resizable()
                                     .placeholder {
                                         Image(systemName: "antenna.radiowaves.left.and.right.circle.fill")
+
                                     }
                                     .frame(width: 30, height: 30)
                                     .cornerRadius(50)
@@ -93,35 +66,52 @@ struct RadioPlayingNowView: View {
                                 .lineLimit(1)
                                 .foregroundColor(.white)
                         }
+
                         
                         Spacer()
                         
                         HStack {
-                            Button(action: togglePlayOrPause) {
+                            Button(action: {
+                                if let station = playingStation {
+                                    if api.isPlaying {
+                                        api.pauseRadio()
+                                    } else {
+                                        api.playRadio(urlString: station.url_resolved, stationId: station.stationuuid)
+                                    }
+                                }
+                            }) {
                                 Image(systemName: api.isPlaying ? "pause.fill" : "play.fill")
-                                    .foregroundColor(.indigo)
+                                    .foregroundColor(.white)
                             }
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.roundedRectangle)
+                            .buttonStyle(BorderlessButtonStyle())
                             
-                            Button(action: playRandomStation) {
+                            Button {
+                                if let randomStation = radioStations.randomElement() {
+                                    api.playRadio(urlString: randomStation.url, stationId: randomStation.stationuuid)
+                                }
+                            } label: {
                                 Image(systemName: "shuffle")
-                                    .foregroundColor(.indigo)
+                                    .foregroundColor(.white)
                             }
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.roundedRectangle)
                             
-                            Button(action: toggleFavorite) {
+                            Button {
+                                if let station = playingStation {
+                                    if favoritesAPI.isFavorite(station: station) {
+                                        favoritesAPI.removeFavorite(station: station)
+                                    } else {
+                                        favoritesAPI.addFavorite(station: station)
+                                    }
+                                }
+                            } label: {
                                 if let station = playingStation {
                                     Image(systemName: favoritesAPI.isFavorite(station: station) ? "bookmark.fill" : "bookmark")
-                                        .foregroundColor(.indigo)
+                                        .foregroundColor(.white)
                                 } else {
                                     Image(systemName: "bookmark")
-                                        .foregroundColor(.indigo)
+                                        .foregroundColor(.white)
                                 }
                             }
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.roundedRectangle)
+                            .buttonStyle(BorderlessButtonStyle())
                             
                         }
                         .padding(.trailing, 30)
