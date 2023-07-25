@@ -15,6 +15,8 @@ class SelectedStationModel: ObservableObject {
 }
 
 struct RadioView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     @ObservedObject var api = RadioBrowserAPI.shared
     @ObservedObject var favoritesAPI = globalFavoritesAPI
     
@@ -115,9 +117,9 @@ struct RadioView: View {
                             VStack(alignment: .leading) {
                                 Text(station.name.trimmingCharacters(in: .whitespacesAndNewlines))
                                     .fontWeight(.bold)
-                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : .black)
+                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : (colorScheme == .dark ? .white : .black))
                                 Text(station.state ?? "")
-                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : .black)
+                                    .foregroundColor(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? .indigo : (colorScheme == .dark ? .white : .black))
                             }
                             
                             Spacer()  // This will push the button to the right
