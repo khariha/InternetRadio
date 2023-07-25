@@ -84,7 +84,7 @@ struct RadioView: View {
                         .foregroundColor(.indigo)
                         .scaleEffect(scaleRotate ? 2.5 : 2)
                         .rotationEffect(.degrees(scaleRotate ? 360 : 0), anchor: .center)
-                        .animation(Animation.interpolatingSpring(stiffness: 60, damping: 13).repeatForever(autoreverses: true))
+                        .animation(Animation.interpolatingSpring(stiffness: 60, damping: 13).repeatForever(autoreverses: true), value: scaleRotate)
                         .padding(.bottom, 50)
                         .onAppear() {
                             self.scaleRotate.toggle()
@@ -146,12 +146,16 @@ struct RadioView: View {
                         }
                         .listRowBackground(selectedStationAPI.selectedStation?.stationuuid == station.stationuuid ? GlassBackground(width: 350, height: 60, color: .indigo).cornerRadius(10)
                             .cornerRadius(10) : nil)
-                        
                         .listRowSeparator(.hidden)
+                        
                     }
                     .listStyle(.inset)
                     .scrollIndicators(.hidden)
                     .contentShape(Rectangle())
+                    .mask(LinearGradient(gradient: Gradient(stops: [
+                                .init(color: .black, location: 0.85),
+                                .init(color: .clear, location: 1)
+                            ]), startPoint: .top, endPoint: .bottom))
                     
                 case let .failure(error):
                     Text(error.localizedDescription)
